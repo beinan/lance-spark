@@ -92,7 +92,7 @@ BUNDLE_DIR="${PROJECT_ROOT}/lance-spark-bundle-${SPARK_VERSION}_${SCALA_VERSION}
 BUNDLE_JAR=$(find "${BUNDLE_DIR}/target" -name "lance-spark-bundle-*.jar" \
   -not -name "*sources*" -not -name "*javadoc*" 2>/dev/null | head -1 || true)
 
-if [ -z "${BUNDLE_JAR}" ]; then
+if [ "${REBUILD}" = true ] || [ -z "${BUNDLE_JAR}" ]; then
   echo ">>> Building lance-spark bundle..."
   cd "${PROJECT_ROOT}"
   make bundle SPARK_VERSION="${SPARK_VERSION}" SCALA_VERSION="${SCALA_VERSION}"
