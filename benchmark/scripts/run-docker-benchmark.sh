@@ -227,6 +227,7 @@ docker run ${DOCKER_OPTS} \
       --conf ${SPARK_UI_CONF} \\
       ${SPARK_EVENT_LOG_CONF} \\
       --conf spark.sql.adaptive.enabled=true \\
+      --conf spark.sql.autoBroadcastJoinThreshold=50m \\
       --conf spark.log.level=ERROR \\
       /home/lance/benchmark/lance-spark-benchmark-0.3.0-beta.1.jar \\
       --raw-data /home/lance/data/raw \\
