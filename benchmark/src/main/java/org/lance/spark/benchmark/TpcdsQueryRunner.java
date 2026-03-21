@@ -144,14 +144,20 @@ public class TpcdsQueryRunner {
       return BenchmarkResult.success(queryName, format, iteration, elapsed, rowCount, metrics);
     } catch (Exception e) {
       long elapsed = System.currentTimeMillis() - start;
-      String msg = e.getMessage();
-      if (msg != null && msg.length() > 200) {
-        msg = msg.substring(0, 200) + "...";
-      }
-      return BenchmarkResult.failure(queryName, format, iteration, elapsed, msg);
+      return BenchmarkResult.failure(queryName, format, iteration, elapsed, fullMessage(e));
     } finally {
       spark.sparkContext().clearJobGroup();
     }
+  }
+
+  private static String fullMessage(Throwable t) {
+    StringBuilder sb = new StringBuilder();
+    while (t != null) {
+      if (sb.length() > 0) sb.append("\n  Caused by: ");
+      sb.append(t.getClass().getName()).append(": ").append(t.getMessage());
+      t = t.getCause();
+    }
+    return sb.toString();
   }
 
   List<String> getAvailableQueries() {

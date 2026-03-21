@@ -110,7 +110,23 @@ if [ "${REBUILD}" = true ] || [ ! -f "${BENCHMARK_JAR}" ]; then
 fi
 echo ">>> Benchmark jar: $(basename "${BENCHMARK_JAR}")"
 
-# --- Step 3: Build Docker image if needed ---
+# --- Step 3: Ensure test-base image exists locally ---
+BASE_IMAGE="lance-spark-test-base:${SPARK_VERSION}_${SCALA_VERSION}"
+BASE_IMAGE_EXISTS=$(docker images -q "${BASE_IMAGE}" 2>/dev/null)
+if [ "${REBUILD}" = true ] || [ -z "${BASE_IMAGE_EXISTS}" ]; then
+  echo ">>> Building test-base image locally (${BASE_IMAGE})..."
+  docker build \
+    --build-arg SPARK_DOWNLOAD_VERSION=3.5.5 \
+    --build-arg SPARK_MAJOR_VERSION="${SPARK_VERSION}" \
+    --build-arg SCALA_VERSION="${SCALA_VERSION}" \
+    --build-arg PY4J_VERSION=0.10.9.7 \
+    --build-arg SPARK_SCALA_SUFFIX= \
+    -f "${DOCKER_DIR}/Dockerfile.test-base" \
+    -t "${BASE_IMAGE}" \
+    "${DOCKER_DIR}" 2>&1 | tail -5
+fi
+
+# --- Step 4: Build Docker image if needed ---
 IMAGE_EXISTS=$(docker images -q "${DOCKER_IMAGE}" 2>/dev/null)
 if [ "${REBUILD}" = true ] || [ -z "${IMAGE_EXISTS}" ]; then
   echo ">>> Building Docker image..."
@@ -118,7 +134,8 @@ if [ "${REBUILD}" = true ] || [ -z "${IMAGE_EXISTS}" ]; then
   cp "${BENCHMARK_JAR}" "${DOCKER_DIR}/"
   cd "${DOCKER_DIR}"
 
-  docker build \
+  DOCKER_BUILDKIT=0 docker build \
+    --pull=false \
     --build-arg SPARK_MAJOR_VERSION="${SPARK_VERSION}" \
     --build-arg SCALA_VERSION="${SCALA_VERSION}" \
     -f Dockerfile.benchmark \

@@ -1,7 +1,10 @@
-# syntax=docker/dockerfile:1
 # Dockerfile for running TPC-DS benchmarks with lance-spark.
 # Uses a multi-stage build: stage 1 compiles dsdgen, stage 2 extends the
 # existing test-base image so Spark setup is not duplicated.
+
+# Global ARGs must be declared before the first FROM to be usable in FROM statements.
+ARG SPARK_MAJOR_VERSION=3.5
+ARG SCALA_VERSION=2.12
 
 # --- Stage 1: build dsdgen from source ---
 FROM ubuntu:24.04 AS dsdgen-builder
@@ -9,6 +12,7 @@ FROM ubuntu:24.04 AS dsdgen-builder
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
       build-essential \
+      ca-certificates \
       git \
       bison \
       flex && \
@@ -20,10 +24,11 @@ RUN git clone --depth 1 https://github.com/gregrahn/tpcds-kit.git /opt/tpcds-kit
     make OS=LINUX CFLAGS="-D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE -DYYDEBUG -DLINUX -g -Wall -fcommon"
 
 # --- Stage 2: benchmark image on top of test-base ---
+FROM lance-spark-test-base:${SPARK_MAJOR_VERSION}_${SCALA_VERSION}
+
+# Re-declare ARGs for use within this stage
 ARG SPARK_MAJOR_VERSION=3.5
 ARG SCALA_VERSION=2.12
-
-FROM ghcr.io/hamersaw/lance-spark-test-base:${SPARK_MAJOR_VERSION}_${SCALA_VERSION}
 
 # Copy pre-built dsdgen
 COPY --from=dsdgen-builder /opt/tpcds-kit /opt/tpcds-kit
