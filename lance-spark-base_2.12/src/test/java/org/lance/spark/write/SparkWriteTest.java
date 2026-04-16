@@ -133,7 +133,8 @@ public class SparkWriteTest {
             null,
             Collections.emptyMap(),
             null,
-            false);
+            false,
+            Collections.emptyMap());
     builder.truncate();
     SparkWrite sparkWrite = (SparkWrite) builder.build();
     assertTrue(
